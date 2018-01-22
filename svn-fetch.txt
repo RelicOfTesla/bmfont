@@ -1,0 +1,3 @@
+git config svn-remote.svn.url "https://svn.code.sf.net/p/bmfont/code/trunk"
+git config svn-remote.svn.fetch ":refs/remotes/git-svn"
+git svn fetch 

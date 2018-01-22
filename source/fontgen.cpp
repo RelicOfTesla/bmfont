@@ -162,7 +162,7 @@ int CFontGen::AddIconImage(const char *file, int id, int xoffset, int yoffset, i
 	acImage::Image rawImg;
 	int r = LoadImageFile(file, rawImg);
 	if( r < 0 )
-		return -r;
+		return r;
 
 	acImage::Image rgbImg;
 	acImage::ConvertToARGB(rgbImg, rawImg);
@@ -242,7 +242,7 @@ int CFontGen::UpdateIconImage(int oldId, int id, const char *file, int xoffset, 
 				acImage::Image rawImg;
 				int r = LoadImageFile(file, rawImg);
 				if( r < 0 )
-					return -r;
+					return r;
 
 				acImage::Image rgbImg;
 				acImage::ConvertToARGB(rgbImg, rawImg);

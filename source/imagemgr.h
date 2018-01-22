@@ -48,7 +48,9 @@ protected:
     LRESULT MsgProc(UINT msg, WPARAM wParam, LPARAM lParam);
 
 	void OnSize();
-	void OnImportImage();
+public:
+	void OnImportImage(int id = 0);
+private:
 	void OnInitMenuPopup(HMENU menu, int pos, BOOL isWindowMenu);
 	void OnDeleteSelected();
 	void OnEditImage();

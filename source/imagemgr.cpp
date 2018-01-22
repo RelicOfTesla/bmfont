@@ -171,7 +171,7 @@ void CImageMgr::RefreshList()
 	parent->Invalidate(FALSE);
 }
 
-void CImageMgr::OnImportImage()
+void CImageMgr::OnImportImage(int id)
 {
 	if( fontGen->GetStatus() != 0 ) return;
 
@@ -183,7 +183,7 @@ void CImageMgr::OnImportImage()
 	{
 		CIconImageDlg iconDlg;
 		iconDlg.fileName = dlg.GetFileName();
-		iconDlg.id = 0;
+		iconDlg.id = id;
 		iconDlg.xoffset = 0;
 		iconDlg.yoffset = 0;
 		iconDlg.advance = 0;
@@ -244,8 +244,12 @@ void CImageMgr::OnEditImage()
 		if( iconDlg.DoModal(this) == IDOK )
 		{
 			int r = fontGen->UpdateIconImage(oldId, iconDlg.id, iconDlg.fileName.c_str(), iconDlg.xoffset, iconDlg.yoffset, iconDlg.advance);
-			if( r >= 0 )
-				RefreshList();
+			if (r < 0)
+			{
+				MessageBox(hWnd, __TEXT("Failed to load image file"), __TEXT("File error"), MB_OK);
+				return;
+			}
+			RefreshList();
 		}
 	}
 }

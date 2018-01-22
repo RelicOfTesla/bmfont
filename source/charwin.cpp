@@ -764,7 +764,20 @@ LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 				UpdateStatus();
 			}
 			return 0;
-
+		case ID_POPUP_EDIT_IMAGE:
+			{
+				int ch = _selectItemChar;
+				if (ch > 0)
+				{
+					if (!imageMgr)
+					{
+						imageMgr = new CImageMgr();
+						imageMgr->Create(this, fontGen);
+					}
+					imageMgr->OnImportImage(ch);
+				}
+			}
+			return 0;
 		case ID_EDIT_CLEARALL:
 			fontGen->ClearAll();
 			Invalidate(FALSE);
@@ -881,7 +894,8 @@ LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 
 void CCharWin::OnRButtonDown(int x, int y)
 {
-	HMENU menu = LoadMenu(0, MAKEINTRESOURCE(IDR_POPUP));
+	_selectItemChar = GetCharFromPos(x, y);
+	HMENU menu = LoadMenu(0, MAKEINTRESOURCE(_selectItemChar >= 0 ? IDR_CHAR_EDIT : IDR_POPUP));
 	HMENU subMenu = GetSubMenu(menu, 0);
 
 	POINT pt = {x,y};

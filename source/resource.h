@@ -141,3 +141,6 @@
 #define IDC_RENDERFROMOUTLINE                   57683
 #define IDC_CLEARTYPE                           57685
 #define IDC_FONTFILE                            57687
+
+#define IDR_CHAR_EDIT							6			
+#define ID_POPUP_EDIT_IMAGE		                60001

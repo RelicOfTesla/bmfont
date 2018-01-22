@@ -100,6 +100,8 @@ protected:
 	bool isGenerating;
 	int whenGenerateIsFinished;
 	string saveFontName;
+	
+	int _selectItemChar;
 };
 
 #endif
