@@ -1,6 +1,6 @@
 /*
    AngelCode Bitmap Font Generator
-   Copyright (c) 2004-2023 Andreas Jonsson
+   Copyright (c) 2004-2024 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -819,6 +819,7 @@ int CFontGen::SetAutoFitNumPages(int numPages)
 	arePagesGenerated = false;
 
 	autoFitNumPages = numPages;
+	DetermineWidthPadding();
 	return 0;
 }
 
@@ -1303,10 +1304,10 @@ int CFontGen::GetNonUnicodeGlyph(unsigned int ch) const
 // Internal
 void CFontGen::DetermineWidthPadding()
 {
-	if (widthPaddingFactor == 0.0f)
+	if (widthPaddingFactor == 0.0f || autoFitNumPages == 0)
 	{
 		paddingFromWidth = 0;
-		return;
+		return; 
 	}
 
 	HDC dc = GetDC(0);
