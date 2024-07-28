@@ -20,10 +20,11 @@ The program and any possible upgrades can be found at www.AngelCode.com. The aut
 
 Changes
 -------------------------------
-1.14b - 2023/04/29
+1.14b - 2024/07/28
 - Fixed performance issue in UI when moving mouse over the character grid in ANSI mode.
 - Fixed horizontal clipping and incorrect xadvance on some glyphs in ANSI mode when not rendering from true type outline.
 - Fixed 'Select all chars' in ANSI mode that didn't select all 256 characters after starting the application in Unicode mode.
+- Fixed bug with auto-fitter that applied the adaptive padding even when auto-fitting was turned off.
 
 1.14a - 2021/04/08
 - Fixed bug when invalid char glyph doesn't fit when using auto-fitting.
