@@ -1,6 +1,6 @@
 /*
    AngelCode Bitmap Font Generator
-   Copyright (c) 2004-2016 Andreas Jonsson
+   Copyright (c) 2004-2021 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -103,6 +103,7 @@ LRESULT CChooseFont::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		case IDC_USEOEM:
 		case IDC_RENDERFROMOUTLINE:
 		case IDC_SMOOTH:
+		case IDC_AUTOFITPAGES:
 			EnableWidgets();
 			break;
 		}
@@ -125,6 +126,16 @@ void CChooseFont::EnableWidgets()
 
 	// Clear type is only available when using font smoothing and native renderer
 	EnableWindow(GetDlgItem(hWnd, IDC_CLEARTYPE), !IsDlgButtonChecked(hWnd, IDC_RENDERFROMOUTLINE) && IsDlgButtonChecked(hWnd, IDC_SMOOTH));
+
+	// Disable font size if autofit pages is different from 0
+	EnableWindow(GetDlgItem(hWnd, IDC_FONTSIZE), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) == 0);
+	EnableWindow(GetDlgItem(hWnd, IDC_MATCHCHARHEIGHT), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) == 0);
+
+	// Disable autofit min and max if autofit pages is 0
+	EnableWindow(GetDlgItem(hWnd, IDC_MINSIZE), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) > 0);
+	EnableWindow(GetDlgItem(hWnd, IDC_MINSIZESPIN), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) > 0);
+	EnableWindow(GetDlgItem(hWnd, IDC_MAXSIZE), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) > 0);
+	EnableWindow(GetDlgItem(hWnd, IDC_MAXSIZESPIN), GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE) > 0);
 }
 
 void CChooseFont::OnFontChange()
@@ -254,8 +265,15 @@ void CChooseFont::OnInit()
 		SetDlgItemInt(hWnd, IDC_FONTSIZE, fontSize, FALSE);
 	}
 
+	SetDlgItemInt(hWnd, IDC_AUTOFITPAGES, autoFitPages, FALSE);
+	SetDlgItemInt(hWnd, IDC_MINSIZE, autoFitMinSize, FALSE);
+	SetDlgItemInt(hWnd, IDC_MAXSIZE, autoFitMaxSize, FALSE);
+
 	SendDlgItemMessage(hWnd, IDC_SIZESPIN, UDM_SETRANGE, 0, (LPARAM)MAKELONG(255, 1));
-	SendDlgItemMessage(hWnd, IDC_SPINSAMPLING, UDM_SETRANGE, 0, (LPARAM)MAKELONG(4, 2)); 
+	SendDlgItemMessage(hWnd, IDC_MINSIZESPIN, UDM_SETRANGE, 0, (LPARAM)MAKELONG(255, 1));
+	SendDlgItemMessage(hWnd, IDC_MAXSIZESPIN, UDM_SETRANGE, 0, (LPARAM)MAKELONG(255, 1));
+	SendDlgItemMessage(hWnd, IDC_AUTOFITPAGESSPIN, UDM_SETRANGE, 0, (LPARAM)MAKELONG(255, 0));
+	SendDlgItemMessage(hWnd, IDC_SPINSAMPLING, UDM_SETRANGE, 0, (LPARAM)MAKELONG(4, 2));
 	SendDlgItemMessage(hWnd, IDC_SCALEH_SPIN, UDM_SETRANGE, 0, (LPARAM)MAKELONG(200, 50)); 
 
 	CheckDlgButton(hWnd, IDC_BOLD, isBold ? BST_CHECKED : BST_UNCHECKED);
@@ -348,6 +366,10 @@ void CChooseFont::GetOptions()
 	fontSize = GetDlgItemInt(hWnd, IDC_FONTSIZE, 0, FALSE);
 	if( IsDlgButtonChecked(hWnd, IDC_MATCHCHARHEIGHT) == BST_CHECKED )
 		fontSize = -fontSize;
+
+	autoFitPages = GetDlgItemInt(hWnd, IDC_AUTOFITPAGES, 0, FALSE);
+	autoFitMinSize = GetDlgItemInt(hWnd, IDC_MINSIZE, 0, FALSE);
+	autoFitMaxSize = GetDlgItemInt(hWnd, IDC_MAXSIZE, 0, FALSE);
 
 	if( IsDlgButtonChecked(hWnd, IDC_ENABLEAA) == BST_CHECKED )
 	{

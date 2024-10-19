@@ -1,6 +1,6 @@
 /*
    AngelCode Bitmap Font Generator
-   Copyright (c) 2004-2016 Andreas Jonsson
+   Copyright (c) 2004-2021 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -29,6 +29,7 @@
 #include "exportdlg.h"
 #include "resource.h"
 #include "commctrl.h"
+#include <sstream>
 
 using namespace acWindow;
 
@@ -170,6 +171,9 @@ void CExportDlg::EnableWidgets()
 		EnableWindow(GetDlgItem(hWnd, IDC_INV_G), TRUE);
 		EnableWindow(GetDlgItem(hWnd, IDC_INV_B), TRUE);
 	}
+
+	// Enable adaptive padding if autofit pages is > 0
+	EnableWindow(GetDlgItem(hWnd, IDC_ADAPTIVEPADFACTOR), autofitPages > 0);
 }
 
 void CExportDlg::OnInit()
@@ -187,6 +191,11 @@ void CExportDlg::OnInit()
 
 	CheckDlgButton(hWnd, IDC_FIXEDHEIGHT, fixedHeight ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hWnd, IDC_FORCEZERO, forceZero ? BST_CHECKED : BST_UNCHECKED);
+
+	std::stringstream tmp;
+	tmp << adaptivePaddingFactor;
+	ConvertUtf8ToTChar(tmp.str().c_str(), buf, 256);
+	SetDlgItemText(hWnd, IDC_ADAPTIVEPADFACTOR, buf);
 
 	// Output texture
 	SetDlgItemInt(hWnd, IDC_WIDTH, width, FALSE);
@@ -322,6 +331,8 @@ void CExportDlg::OnTextureChange()
 
 void CExportDlg::GetOptions()
 {
+	TCHAR buf[256];
+
 	// Character layout
 	paddingUp = GetDlgItemInt(hWnd, IDC_SPACE_UP, 0, FALSE);
 	paddingDown = GetDlgItemInt(hWnd, IDC_SPACE_DOWN, 0, FALSE);
@@ -333,6 +344,11 @@ void CExportDlg::GetOptions()
 
 	fixedHeight = IsDlgButtonChecked(hWnd, IDC_FIXEDHEIGHT) ? true : false;
 	forceZero = IsDlgButtonChecked(hWnd, IDC_FORCEZERO) ? true : false;
+
+	string tmp;
+	GetDlgItemText(hWnd, IDC_ADAPTIVEPADFACTOR, buf, 256);
+	ConvertTCharToUtf8(buf, tmp);
+	sscanf(tmp.c_str(), "%f", &adaptivePaddingFactor);
 
 	// Output texture
 	width = GetDlgItemInt(hWnd, IDC_WIDTH, 0, FALSE);
@@ -349,7 +365,6 @@ void CExportDlg::GetOptions()
 	if( IsDlgButtonChecked(hWnd, IDC_DESC_BIN)  ) fontDescFormat = 2;
 
 	// Get the file extension from combo box
-	TCHAR buf[256];
 	GetDlgItemText(hWnd, IDC_TEXTURE_FMT, buf, 256);
 	ConvertTCharToUtf8(buf, textureFormat);
 	textureFormat.resize(3);

@@ -1,6 +1,6 @@
 /*
    AngelCode Tool Box Library
-   Copyright (c) 2004-2016 Andreas Jonsson
+   Copyright (c) 2004-2019 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -25,6 +25,7 @@
    andreas@angelcode.com
 */
 
+// 2019-09-26  Fixed a bug in ConvertUtf8ToTChar to handle multiple strings separated by double null
 // 2016-02-21  Fixes for Win64
 // 2014-06-17  Removed dependency on Windows.h in header
 // 2014-06-16  Prepared the code to work for both unicode and multibyte applications
@@ -510,6 +511,7 @@ void CWindow::HideSystemMenuButton()
 
 // Helpers for converting strings between UTF8 and Windows' TCHAR
 // These are prepared for both when the application is built for multibyte and when built for unicode
+// TODO: Move to acutil_unicode.cpp
 void ConvertTCharToUtf8(const TCHAR *buf, std::string &utf8)
 {
 #ifdef _UNICODE
@@ -521,10 +523,13 @@ void ConvertTCharToUtf8(const TCHAR *buf, std::string &utf8)
 #endif
 }
 
+// TODO: Move to acutil_unicode.cpp
 void ConvertUtf8ToTChar(const std::string &utf8, TCHAR *buf, size_t bufSize)
 {
 #ifdef _UNICODE
-	MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buf, int(bufSize));
+	int cnt = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), int(utf8.size()), buf, int(bufSize));
+	if (cnt >= 0)
+		buf[size_t(cnt) < bufSize ? cnt : bufSize - 1 ] = 0;
 #else
 	strcpy_s(buf, bufSize, utf8.c_str());
 #endif

@@ -1,6 +1,6 @@
 /*
    AngelCode Bitmap Font Generator
-   Copyright (c) 2004-2017 Andreas Jonsson
+   Copyright (c) 2004-2023 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -126,8 +126,11 @@ int CCharWin::GetCharFromPos(int posX, int posY)
 
 	if( fontGen->IsUsingUnicode() )
 	{
-		ch = fontGen->GetUnicodeSubset(unicodeSubset)->charBegin + y*16 + x;
-		if( ch > fontGen->GetUnicodeSubset(unicodeSubset)->charEnd )
+		const SSubset *set = fontGen->GetUnicodeSubset(unicodeSubset);
+		if (set == 0)
+			return -1;
+		ch = set->charBegin + y*16 + x;
+		if( ch > set->charEnd )
 			return -1;
 	}
 	else
@@ -200,8 +203,11 @@ void CCharWin::UpdateStatus()
 		statusBar->SetStatusText(str.c_str());
 
 		// Display the current charset
-		if( fontGen->IsUsingUnicode() )
-			str = fontGen->GetUnicodeSubset(unicodeSubset)->name;
+		if (fontGen->IsUsingUnicode())
+		{
+			const SSubset *set = fontGen->GetUnicodeSubset(unicodeSubset);
+			str = set ? set->name : "";
+		}
 		else
 			str = "ASCII";
 		statusBar->SetStatusText(str.c_str(), 1, 0);
@@ -307,7 +313,7 @@ void CCharWin::PrepareView()
 				for( lastInLV++; lastInLV < (signed)numSets; lastInLV++ )
 				{
 					const SSubset *set = fontGen->GetUnicodeSubset(lastInLV);
-					if( set->available )
+					if( set && set->available )
 					{
 						string name = acStringFormat("%0.6X  %s", set->charBegin, set->name.c_str());
 						listView->InsertItem(numSets, name.c_str(), lastInLV);
@@ -326,7 +332,7 @@ void CCharWin::PrepareView()
 				for( lastInLV++; lastInLV < subset; lastInLV++ )
 				{
 					const SSubset *set = fontGen->GetUnicodeSubset(lastInLV);
-					if( set->available )
+					if( set && set->available )
 					{
 						string name = acStringFormat("%0.6X  %s", set->charBegin, set->name.c_str());
 						listView->InsertItem(lvi++, name.c_str(), lastInLV);
@@ -334,7 +340,8 @@ void CCharWin::PrepareView()
 				}
 
 				// Should the current item be removed?
-				if( !fontGen->GetUnicodeSubset((unsigned int)subset)->available )
+				const SSubset *set = fontGen->GetUnicodeSubset((unsigned int)subset);
+				if( !set || !set->available )
 					listView->DeleteItem(lvi--);
 			}
 		}
@@ -382,7 +389,10 @@ void CCharWin::Draw()
 		LineTo(dc, rc.right, y);
 	}
 
-	HFONT font = fontGen->CreateFont(rc.bottom/16-4);
+	// Determine the size. Make sure it is larger than 0
+	int size = rc.bottom / 16 - 4;
+	if (size < 1) size = 1;
+	HFONT font = fontGen->GetCachedFont(size);
 	HFONT oldFont = (HFONT)SelectObject(dc, font);
 	SetTextColor(dc, RGB(255,255,255));
 	SetBkColor(dc, RGB(0,0,0));
@@ -396,8 +406,6 @@ void CCharWin::Draw()
 	DrawGlyphs(dc, rc, tm);
 
 	SelectObject(dc, oldFont);
-	DeleteObject(font);
-
 	SelectObject(dc, oldPen);
 	DeleteObject(red);
 	DeleteObject(pen);
@@ -411,8 +419,16 @@ void CCharWin::DrawGlyphs(HDC dc, RECT &rc, TEXTMETRIC &tm)
 	if (fontGen->IsUsingUnicode())
 	{
 		const SSubset *subset = fontGen->GetUnicodeSubset(unicodeSubset);
-		offset = subset->charBegin;
-		charEnd = subset->charEnd;
+		if (subset)
+		{
+			offset = subset->charBegin;
+			charEnd = subset->charEnd;
+		}
+		else
+		{
+			offset = 0;
+			charEnd = -1;
+		}
 	}
 
 	SCRIPT_CACHE sc = 0;
@@ -562,10 +578,12 @@ void CCharWin::OnInitMenuPopup(HMENU menu, int pos, BOOL isWindowMenu)
 	else
 		CheckMenuItem(menu, ID_EDIT_OPENIMAGEMANAGER, MF_BYCOMMAND | MF_UNCHECKED);
 
+#if defined(EXPERIMENTAL)
 	if (inspectFont)
 		CheckMenuItem(menu, ID_OPTIONS_INSPECTFONT, MF_BYCOMMAND | MF_CHECKED);
 	else
 		CheckMenuItem(menu, ID_OPTIONS_INSPECTFONT, MF_BYCOMMAND | MF_UNCHECKED);
+#endif
 }
 
 LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -792,15 +810,19 @@ LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		case ID_EDIT_FINDNEXTFAILEDCHAR:
 			{
 				unicodeSubset = fontGen->FindNextFailedCharacterSubset(unicodeSubset);
-				int li = listView->FindItem(-1, fontGen->GetUnicodeSubset(unicodeSubset)->name.c_str());
-				SetFocus(listView->GetHandle());
-				listView->SetItemState(-1, LVIS_FOCUSED|LVIS_SELECTED, 0);
-				if( li >= 0 )
+				const SSubset *set = fontGen->GetUnicodeSubset(unicodeSubset);
+				if (set)
 				{
-					listView->SetItemState(li, LVIS_FOCUSED|LVIS_SELECTED, LVIS_FOCUSED|LVIS_SELECTED);
-					listView->EnsureVisible(li);
+					int li = listView->FindItem(-1, set->name.c_str());
+					SetFocus(listView->GetHandle());
+					listView->SetItemState(-1, LVIS_FOCUSED | LVIS_SELECTED, 0);
+					if (li >= 0)
+					{
+						listView->SetItemState(li, LVIS_FOCUSED | LVIS_SELECTED, LVIS_FOCUSED | LVIS_SELECTED);
+						listView->EnsureVisible(li);
+					}
+					Invalidate(FALSE);
 				}
-				Invalidate(FALSE);
 			}
 			return 0;
 
@@ -822,6 +844,7 @@ LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			return 0;
 
+#ifdef EXPERIMENTAL
 		case ID_OPTIONS_INSPECTFONT:
 			if (inspectFont)
 			{
@@ -834,6 +857,7 @@ LRESULT CCharWin::MsgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 				inspectFont->Create(this, fontGen);
 			}
 			return 0;
+#endif
 		}
 		break;
 
@@ -962,6 +986,9 @@ void CCharWin::OnChooseFont()
 	dlg.fontFile                = fontGen->GetFontFile();
 	dlg.charSet                 = fontGen->GetCharSet();
 	dlg.fontSize                = fontGen->GetFontSize();
+	dlg.autoFitPages            = fontGen->GetAutoFitNumPages();
+	dlg.autoFitMinSize          = fontGen->GetAutoFitFontSizeMin();
+	dlg.autoFitMaxSize          = fontGen->GetAutoFitFontSizeMax();
 	dlg.isBold                  = fontGen->IsBold();
 	dlg.isItalic                = fontGen->IsItalic();
 	dlg.antiAliasing            = fontGen->GetAntiAliasingLevel();
@@ -985,6 +1012,9 @@ void CCharWin::OnChooseFont()
 		fontGen->SetFontFile(dlg.fontFile);
 		fontGen->SetCharSet(dlg.charSet);
 		fontGen->SetFontSize(dlg.fontSize);
+		fontGen->SetAutoFitNumPages(dlg.autoFitPages);
+		fontGen->SetAutoFitFontSizeMin(dlg.autoFitMinSize);
+		fontGen->SetAutoFitFontSizeMax(dlg.autoFitMaxSize);
 		fontGen->SetBold(dlg.isBold);
 		fontGen->SetItalic(dlg.isItalic);
 		fontGen->SetAntiAliasingLevel(dlg.antiAliasing);
@@ -1022,6 +1052,8 @@ void CCharWin::OnExportOptions()
 	dlg.spacingVert     = fontGen->GetSpacingVert();
 	dlg.fixedHeight     = fontGen->GetFixedHeight();
 	dlg.forceZero       = fontGen->GetForceZero();
+	dlg.adaptivePaddingFactor = fontGen->GetWidthPaddingFactor();
+	dlg.autofitPages = fontGen->GetAutoFitNumPages();
 
 	dlg.width              = fontGen->GetOutWidth();
 	dlg.height             = fontGen->GetOutHeight();
@@ -1050,6 +1082,7 @@ void CCharWin::OnExportOptions()
 		fontGen->SetSpacingVert(dlg.spacingVert);
 		fontGen->SetFixedHeight(dlg.fixedHeight);
 		fontGen->SetForceZero(dlg.forceZero);
+		fontGen->SetWidthPaddingFactor(dlg.adaptivePaddingFactor);
 
 		fontGen->SetOutWidth(dlg.width);
 		fontGen->SetOutHeight(dlg.height);
@@ -1089,7 +1122,10 @@ void CCharWin::VisualizeAfterFinishedGenerating()
 		if( countFailed )
 		{
 			stringstream s;
-			s << countFailed << " characters did not fit the textures.";
+			if (fontGen->GetAutoFitNumPages() > 0)
+				s << countFailed << " characters did not fit within " << fontGen->GetAutoFitNumPages() << " pages.";
+			else
+				s << countFailed << " characters did not fit the textures.";
 
 			TCHAR buf[1024];
 			ConvertUtf8ToTChar(s.str(), buf, 1024);
@@ -1120,13 +1156,26 @@ void CCharWin::OnVisualize()
 void CCharWin::SaveFontAfterFinishedGenerating()
 {
 	// Save the generated font
-	fontGen->SaveFont(saveFontName.c_str());
+	int r = fontGen->SaveFont(saveFontName.c_str());
+	if (r < 0)
+	{
+		stringstream s;
+		s << "Failed do save font '" << saveFontName << "'.";
+
+		TCHAR buf[1024];
+		ConvertUtf8ToTChar(s.str(), buf, 1024);
+
+		MessageBox(hWnd, buf, __TEXT("Error"), MB_OK);
+	}
 
 	int countFailed = fontGen->GetNumFailedChars();
 	if( countFailed )
 	{
 		stringstream s;
-		s << countFailed << " characters did not fit the textures.";
+		if (fontGen->GetAutoFitNumPages() > 0)
+			s << countFailed << " characters did not fit within " << fontGen->GetAutoFitNumPages() << " pages.";
+		else
+			s << countFailed << " characters did not fit the textures.";
 
 		TCHAR buf[1024];
 		ConvertUtf8ToTChar(s.str(), buf, 1024);

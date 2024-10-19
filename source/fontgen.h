@@ -1,6 +1,6 @@
 /*
    AngelCode Bitmap Font Generator
-   Copyright (c) 2004-2016 Andreas Jonsson
+   Copyright (c) 2004-2023 Andreas Jonsson
   
    This software is provided 'as-is', without any express or implied 
    warranty. In no event will the authors be held liable for any 
@@ -139,6 +139,9 @@ public:
 	bool    GetRenderFromOutline() const;  int SetRenderFromOutline(bool set);
 	bool    GetUseHinting() const;         int SetUseHinting(bool set);
 	bool    GetUseClearType() const;       int SetUseClearType(bool set);
+	int     GetAutoFitNumPages() const;    int SetAutoFitNumPages(int pages);
+	int     GetAutoFitFontSizeMin() const; int SetAutoFitFontSizeMin(int fontSize);
+	int     GetAutoFitFontSizeMax() const; int SetAutoFitFontSizeMax(int fontSize);
 
 	// Character padding and spacing
 	int     GetPaddingDown() const;        int SetPaddingDown(int pad);
@@ -150,7 +153,8 @@ public:
 	int     GetScaleHeight() const;        int SetScaleHeight(int scale);
 	bool    GetFixedHeight() const;        int SetFixedHeight(bool fixed);
 	bool    GetForceZero() const;          int SetForceZero(bool force);
-									
+	float   GetWidthPaddingFactor() const; int SetWidthPaddingFactor(float factor);
+
 	// Output font file
 	int     GetOutWidth() const;           int SetOutWidth(int width);
 	int     GetOutHeight() const;          int SetOutHeight(int height);
@@ -175,7 +179,7 @@ public:
 	int     Prepare();
 
 	// A helper function for creating the font object
-	HFONT   CreateFont(int fontSize) const;
+	HFONT   GetCachedFont(int fontSize) const;
 
 	// Visualize pages
 	int     GetNumPages();
@@ -189,14 +193,20 @@ public:
 	int     LoadConfiguration(const char *filename);
 	string  GetLastConfigFile() const;
 
+	// AutoFit
+	void    ChangeAutoFitFontSize(int fontSize);
+
 protected:
 	friend class CFontPage;
 
 	void ResetFont();
 	void ClearPages();
+	void ClearChars();
+	void ClearIcons();
 	int  CreatePage();
 	void ClearSubsets();
 	void DetermineExistingChars();
+	void DetermineWidthPadding();
 
 	static void __cdecl GenerateThread(CFontGen *fontGen);
 	void InternalGeneratePages();
@@ -227,16 +237,21 @@ protected:
 	bool   renderFromOutline;
 	bool   useHinting;
 	bool   useClearType;
+	int    autoFitNumPages;
+	int    autoFitFontSizeMin;
+	int    autoFitFontSizeMax;
 
 	// Char alignment options
-	int  paddingDown;
-	int  paddingUp;
-	int  paddingRight;
-	int  paddingLeft;	
-	int  spacingHoriz;
-	int  spacingVert;
-	bool fixedHeight;
-	bool forceZero;
+	int   paddingDown;
+	int   paddingUp;
+	int   paddingRight;
+	int   paddingLeft;	
+	int   spacingHoriz;
+	int   spacingVert;
+	bool  fixedHeight;
+	bool  forceZero;
+	int   paddingFromWidth;
+	float widthPaddingFactor;
 
 	// File output options
 	int    outWidth;
@@ -259,11 +274,12 @@ protected:
 	int    outlineThickness;
 
 	// Characters
-	int  numCharsSelected;
-	int  numCharsAvailable;
-	bool disabled[maxUnicodeChar+1];
-	bool selected[maxUnicodeChar+1];
-	bool noFit[maxUnicodeChar+1];
+	int   numCharsSelected;
+	int   numCharsAvailable;
+	bool  disabled[maxUnicodeChar+1];
+	bool  selected[maxUnicodeChar+1];
+	bool  noFit[maxUnicodeChar+1];
+	WCHAR ansiToGlyphMap[256];
 	CFontChar *chars[maxUnicodeChar+1];
 	CFontChar *invalidCharGlyph;
 
@@ -282,6 +298,11 @@ protected:
 
 	// Font config
 	string fontConfigFile;
+
+private:
+	// Cached HFONT object for speed
+	mutable HFONT cachedFont;
+	mutable int   cachedFontSize;
 };
 
 #endif

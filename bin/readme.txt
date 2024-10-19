@@ -1,4 +1,4 @@
-Bitmap Font Generator v1.14 beta by Andreas Jönsson (www.AngelCode.com)
+Bitmap Font Generator v1.14b by Andreas Jönsson (www.AngelCode.com)
 ----------------------------------------------------------------------------------------
 This program will allow you to generate bitmap fonts from TrueType and other Windows fonts. The application generates both image files and character descriptions that can be read by a game for easy rendering of fonts.
 
@@ -20,14 +20,23 @@ The program and any possible upgrades can be found at www.AngelCode.com. The aut
 
 Changes
 -------------------------------
-1.14 beta - 2017/05/28
+1.14b - 2024/07/28
+- Fixed performance issue in UI when moving mouse over the character grid in ANSI mode.
+- Fixed horizontal clipping and incorrect xadvance on some glyphs in ANSI mode when not rendering from true type outline.
+- Fixed 'Select all chars' in ANSI mode that didn't select all 256 characters after starting the application in Unicode mode.
+- Fixed bug with auto-fitter that applied the adaptive padding even when auto-fitting was turned off.
+
+1.14a - 2021/04/08
+- Fixed bug when invalid char glyph doesn't fit when using auto-fitting.
+- Included both 64bit and 32bit builds in the package.
+
+1.14 - 2021/01/05
 - Fixed crash with large fonts when Windows API incorrectly reported negative width for glyphs.
 - Improved handling of out-of-memory conditions.
 - Fixed crash that could occur when exporting Unicode characters above 0x10000 with kerning pairs.
 - Fixed crash when command line argument -c was a relative path and the configuration included font file or image files.
 - Fixed crash when saving configuration file with added font file from the same directory.
 - Corrected the cell height when using fixed height and super-sampling.
-- Fixed compatibility with Windows XP.
 - Fixed scaling issues and cropping when using height scale with render from outline.
 - Fixed application freeze when generating very large fonts.
 - The source code is now available under the zlib license.
@@ -37,11 +46,15 @@ Changes
 - Updated libjpeg to 9a.
 - Updated libsquish to 1.13.
 - Fixed a problem with exporting glyphs for some international languages.
-- Added support for Unicode 8.0.
+- Added support for Unicode 13.0.
 - A 64bit build is now available to support huge bitmap fonts that require more than 2GB of memory to generate.
 - The default glyph for invalid characters is now properly rasterized when not rendered from outline too.
 - The status bar now shows the glyph id for the characters.
 - Fixed corrupt glyphs when rendering very large fonts (1000+ px) from glyph outline.
+- Added autofit that automatically determines the max font size that fits in defined texture size.
+- Fixed crash on startup if default font doesn't have the Unicode chars in range 0-255.
+- Added support for file paths with Unicode characters.
+- Improved support for kerning pairs in true type fonts that store them as ranges.
 
 1.13 - 2012/08/12
 - Added option to export fonts using fixed cell heights for easier post processing.
@@ -213,4 +226,4 @@ Changes
 1.0 - 2004/02/14 
 - First public version.
 
-copyright (c) 2004-2013 Andreas Jönsson
+copyright (c) 2004-2021 Andreas Jönsson
